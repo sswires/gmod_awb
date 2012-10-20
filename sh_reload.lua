@@ -11,16 +11,17 @@ function SWEP:Reload()
 		self:SetIronsights( false )
 	end
 
-	if( self:Clip1() < self.Primary.ClipSize and !self.dt.reloadPrimary ) then
+	if( ( self:Clip1() < self.Primary.ClipSize or (self.OpenBolt and self:Clip1() <= self.Primary.ClipSize) ) and !self.dt.reloadPrimary ) then
 		self:StartReloadAt( 0 )
 	end
 	
 	if( self.Akimbo.Enabled ) then
 	
-		if( self:Clip2() < self.Primary.ClipSize and !self.dt.reloadSecondary ) then
+		if( ( self:Clip2() < self.Primary.ClipSize or (self.OpenBolt and self:Clip2() <= self.Primary.ClipSize) ) and !self.dt.reloadSecondary ) then
 			self:StartReloadAt( 1 )
 		end
 	end
+	
 end
 
 function SWEP:GetReloadTimerForIndex( idx )
@@ -47,32 +48,41 @@ function SWEP:StartReloadAt( idx )
 		self:SetNextSecondaryFire( CurTime() + reloadTimeTotal )
 		self.dt.reloadSecondary = true
 	end
+	
 end
 
 function SWEP:FinishReload( idx )
 
-	if( idx == 0 ) then
-		local magazineSize = self.Primary.ClipSize
-		local currentMagazine = self:Clip1()
-		
-		local amountToLoad = magazineSize
+	local magazineSize = self.Primary.ClipSize
+	local currentMagazine = self:Clip1()
 	
-		-- open bolt weapons get +1 if the current magazine has rounds left
-		if(self.OpenBolt and currentMagazine > 0) then
-			amountToLoad = magazineSize + 1
-		end
+	if( idx > 0 ) then
+		currentMagazine = self:Clip2()
+	end
+	
+	local amountToLoad = magazineSize
+
+	-- open bolt weapons get +1 if the current magazine has rounds left
+	if(self.OpenBolt and currentMagazine > 0) then
+		amountToLoad = magazineSize + 1
+	end
+	
+	-- deal with limited ammo
+	if(self.UnlimitedAmmo == false) then
+		local ammoPool = self.Owner:GetAmmoCount(self.Primary.Ammo)
+		amountToLoad = math.Clamp(amountToLoad, 0, ammoPool)
 		
-		-- deal with limited ammo
-		if(self.UnlimitedAmmo == false) then
-			
-		end
+		self.Owner:RemoveAmmo(amountToLoad - currentMagazine, self.Primary.Ammo)
+	end
 		
+	if( idx == 0 ) then
 		self:SetClip1( amountToLoad )
 		self.dt.reloadPrimary = false
 	else
-		self:SetClip2( self.Primary.ClipSize )
+		self:SetClip2( amountToLoad )
 		self.dt.reloadSecondary = false
 	end
+	
 end
 
 function SWEP:ReloadThink( idx )
@@ -80,4 +90,5 @@ function SWEP:ReloadThink( idx )
 	if( CurTime() > self:GetReloadTimerForIndex( idx ) ) then
 		self:FinishReload( idx )
 	end
+	
 end
