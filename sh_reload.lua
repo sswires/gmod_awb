@@ -11,6 +11,10 @@ function SWEP:Reload()
 		self:SetIronsights( false )
 	end
 
+	if( self.UnlimitedAmmo == false and self.Owner:GetAmmoCount( self.Primary.Ammo ) <= 0 ) then
+		return
+	end
+	
 	if( ( self:Clip1() < self.Primary.ClipSize or (self.OpenBolt and self:Clip1() <= self.Primary.ClipSize) ) and !self.dt.reloadPrimary ) then
 		self:StartReloadAt( 0 )
 	end
