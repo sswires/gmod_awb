@@ -8,7 +8,7 @@ SWEP.Primary.RecoilPenalty.SprayClamp		= 3
 SWEP.Primary.RecoilPenalty.SprayAmount		= 0.333
 
 function SWEP:AddViewKick()
-	local recoilAmount = self.Primary.Recoil/10
+	local recoilAmount = self.Primary.Recoil
 	
 	if( self.dt.shotsFired > 0 ) then
 		recoilAmount = recoilAmount + ( math.Clamp(self.dt.shotsFired, 0, self.Primary.RecoilPenalty.SprayClamp) * self.Primary.RecoilPenalty.SprayAmount )
