@@ -118,7 +118,7 @@ function SWEP:ApplyViewModelTransformations( vm )
 
 	vm:SetupBones()
 
-	if( vm and ValidEntity( vm ) and self.Akimbo.ClearBones[ self.Akimbo.BoneProfile ] ) then
+	if( vm and vm:IsValid() and self.Akimbo.ClearBones[ self.Akimbo.BoneProfile ] ) then
 		for k, v in pairs( self.Akimbo.ClearBones[ self.Akimbo.BoneProfile ] ) do
 			local handBone = vm:LookupBone( v )
 
