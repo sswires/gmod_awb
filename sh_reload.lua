@@ -53,6 +53,8 @@ function SWEP:StartReloadAt( idx )
 		self.dt.reloadSecondary = true
 	end
 	
+	self.Owner:SetAnimation( PLAYER_RELOAD )
+	
 end
 
 function SWEP:FinishReload( idx )
@@ -73,7 +75,7 @@ function SWEP:FinishReload( idx )
 	
 	-- deal with limited ammo
 	if(self.UnlimitedAmmo == false) then
-		local ammoPool = self.Owner:GetAmmoCount(self.Primary.Ammo)
+		local ammoPool = self.Owner:GetAmmoCount(self.Primary.Ammo) + currentMagazine
 		amountToLoad = math.Clamp(amountToLoad, 0, ammoPool)
 		
 		self.Owner:RemoveAmmo(amountToLoad - currentMagazine, self.Primary.Ammo)

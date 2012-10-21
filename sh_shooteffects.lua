@@ -6,6 +6,8 @@ function SWEP:DoShootEffects( vmidx )
 	if( self.CustomEffects and (SERVER or (CLIENT and IsFirstTimePredicted())) ) then
 		self:BarrelSmoke( vmidx )
 	end
+	
+	self.Owner:SetAnimation( PLAYER_ATTACK1 )
 
 end
 
