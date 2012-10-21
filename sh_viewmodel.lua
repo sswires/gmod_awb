@@ -1,6 +1,22 @@
 SWEP.ViewModelOffsets = {
-							Ironsight = { pos = Vector( 0, 2, 0 ), ang = Angle( 0, 0, 0 ) },
-							Sprint = { pos = Vector( 0, 0, 1.5 ), ang = Angle( -20, 0, 0 ) },
+							Ironsight = {
+											pos = Vector( 0, 2, 0 ),
+											ang = Angle( 0, 0, 0 ),
+											
+											fracFunc =
+												function(weap)
+													return weap:GetIronsightFraction()
+												end,
+										},
+							Sprint = 	{
+											pos = Vector( 0, 0, 1.5 ),
+											ang = Angle( -20, 0, 0 ),
+											
+											fracFunc =
+												function(weap)
+													return weap:GetSprintFraction()
+												end,
+										},
 						}
 
 function SWEP:SendWeaponAnimation( anim, idx, pbr )
@@ -10,7 +26,7 @@ function SWEP:SendWeaponAnimation( anim, idx, pbr )
 	
 	local owner = self:GetOwner()
 		
-	if( owner && owner:IsValid() && owner:IsPlayer() ) then
+	if( owner and owner:IsValid() and owner:IsPlayer() ) then
 	
 		local vm = owner:GetViewModel( idx )
 	
@@ -30,49 +46,19 @@ function SWEP:SendWeaponAnimation( anim, idx, pbr )
 	end	
 end
 
-function SWEP:GetViewModelOffsetFraction( otype )
-
-	if( otype == "Ironsight" ) then
-	
-		local deltaIronsight = CurTime() - self.dt.ironsightTime
-		
-		if( self:IsIronsighted() or deltaIronsight <= self.IronsightTime ) then
-			
-			if( self:IsIronsighted() ) then
-				return math.min( deltaIronsight / self.IronsightTime, 1.0 )
-			else
-				return math.Clamp( 1.0 - ( deltaIronsight / self.IronsightTime ), 0.0, 1.0 )
-			end
-		end
-	end
-	
-	if( otype == "Sprint" ) then
-		
-		if( self:LoweredTime() > 0.0 ) then
-		
-			local timeSinceLower = CurTime() - self:LoweredTime()
-			
-			if( self:IsLowered() ) then
-				return math.Clamp( timeSinceLower, 0, 0.25 ) * 4
-			elseif( timeSinceLower <= 0.25 ) then
-				return 1.0 - ( math.Clamp( timeSinceLower, 0, 0.25 ) * 4 )
-			end
-		end
-	end
-	
-	return 0.0
-end
-
 function SWEP:GetViewModelPosition( pos, ang )
 
 	self.SwayScale = self:GetSwayScale()
 	self.BobScale = self:GetBobScale() 
 	
+	
 	for k, v in pairs( self.ViewModelOffsets ) do
-		local frac = self:GetViewModelOffsetFraction( k )
-		
-		if( frac > 0.0 ) then
-			pos, ang = self:ApplyVecAngOffset( pos, ang, v.pos, v.ang, frac )
+		if( v.fracFunc ~= nil ) then
+			local frac = v.fracFunc(self)
+			
+			if( frac > 0.0 ) then
+				pos, ang = self:ApplyVecAngOffset( pos, ang, v.pos, v.ang, frac )
+			end
 		end
 	end
 
@@ -90,6 +76,10 @@ end
 
 function SWEP:GetBobScale()
 
+	if( self.dt.lowered ) then
+		return 2.0
+	end
+	
 	if( self:IsIronsighted() ) then
 		return 0.01
 	end

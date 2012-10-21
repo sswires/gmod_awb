@@ -1,6 +1,7 @@
-SWEP.DrawCrosshair 	= false -- do not draw the default crosshair
-SWEP.ZoomCrosshair	= true -- still show crosshair when aiming down sights
-SWEP.CustomHud 		= true
+SWEP.DrawSniperScope 	= false -- draw sniper scope when fully zoomed?
+SWEP.DrawCrosshair 		= false -- do not draw the default crosshair
+SWEP.ZoomCrosshair		= true -- still show crosshair when aiming down sights
+SWEP.CustomHud 			= true
 
 -- client tweakables for custom xhair
 crosshair_r 			= CreateClientConVar( "crosshair_r", 255, true, false )
@@ -14,6 +15,24 @@ function SWEP:DrawHUD()
 	if( self.CustomHud ) then
 		self:DrawCustomCrosshair()
 	end
+	
+	if(self.DrawSniperScope) then
+		if(self:GetIronsightFraction() >= 1.0) then
+			self:DrawSniperOverlay()
+		end
+	end
+end
+
+function SWEP:DrawSniperOverlay()
+
+	local screenWidth = ScrW()
+	local screenHeight = ScrH()
+	local scopeWidth = (ScrH() / 3) * 4
+
+	surface.SetDrawColor( 0, 0, 0, 255 )
+	surface.DrawRect(0, 0, (screenWidth / 2) - (scopeWidth / 2), screenHeight)
+	surface.DrawRect((screenWidth / 2) + (scopeWidth / 2), 0, screenWidth, screenHeight)
+	
 end
 
 function SWEP:DrawCrosshairBit( x, y, width, height, alpha )
@@ -39,7 +58,7 @@ function SWEP:DrawCustomCrosshair()
 	local x = ScrW()/2
 	local y = ScrH()/2
 	
-	local gap = math.Approach( self.LastCrosshairGap, ( (self.Primary.Cone * ( 260 * (ScrH()/720) ) ) * self:GetSpreadBias()) * crosshair_scale:GetFloat(), FrameTime() * 80 )
+	local gap = math.Approach( self.LastCrosshairGap, ( (self.Primary.Cone * ( 260 * (ScrH()/720) ) ) * self:GetSpreadBias()) * crosshair_scale:GetFloat(), FrameTime() * 160 )
 	gap = math.Clamp( gap, 0, (ScrH()/2)-100 )
 	local length = ( gap + 13 ) * 0.6
 	local alpha = crosshair_a:GetInt()

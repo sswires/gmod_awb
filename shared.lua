@@ -29,6 +29,7 @@ SWEP.Primary.EmptySound				= Sound("Weapon_Pistol.Empty")
 SWEP.HasIronsights					= false
 SWEP.IronsightFOV					= 65
 SWEP.IronsightAccuracy				= 0.5
+SWEP.IronsightRecoil				= 0.7
 SWEP.IronsightTime					= 0.2
 
 SWEP.Secondary.Ammo					= "none"
@@ -197,6 +198,39 @@ end
 
 function SWEP:IsIronsighted()
 	return self.dt.ironsighted
+end
+
+function SWEP:GetIronsightFraction()
+
+	local deltaIronsight = CurTime() - self.dt.ironsightTime
+	
+	if( self:IsIronsighted() or deltaIronsight <= self.IronsightTime ) then
+		
+		if( self:IsIronsighted() ) then
+			return math.min( deltaIronsight / self.IronsightTime, 1.0 )
+		else
+			return math.Clamp( 1.0 - ( deltaIronsight / self.IronsightTime ), 0.0, 1.0 )
+		end
+	end
+	
+	return 0.0
+	
+end
+
+function SWEP:GetSprintFraction()
+
+	if( self:LoweredTime() > 0.0 ) then
+	
+		local timeSinceLower = CurTime() - self:LoweredTime()
+		
+		if( self:IsLowered() ) then
+			return math.Clamp( timeSinceLower, 0, 0.25 ) * 4
+		elseif( timeSinceLower <= 0.25 ) then
+			return 1.0 - ( math.Clamp( timeSinceLower, 0, 0.25 ) * 4 )
+		end
+	end
+	
+	return 0.0
 end
 
 function SWEP:CanAttack()

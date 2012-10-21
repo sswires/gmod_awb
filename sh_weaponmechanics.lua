@@ -7,6 +7,9 @@ SWEP.Primary.RecoilPenalty.AdditiveRatio	= 0.2
 SWEP.Primary.RecoilPenalty.SprayClamp		= 3
 SWEP.Primary.RecoilPenalty.SprayAmount		= 0.333
 
+SWEP.Primary.RecoilHorizMin					= -0.01
+SWEP.Primary.RecoilHorizMax					= 0.01
+
 function SWEP:AddViewKick()
 	local recoilAmount = self.Primary.Recoil
 	
@@ -15,9 +18,21 @@ function SWEP:AddViewKick()
 	end
 
 	local punchAng = ( self.Owner:GetPunchAngle() * self.Primary.RecoilPenalty.AdditiveRatio ) -- keep a bit of the current punch angle
-	punchAng = punchAng + Angle( -recoilAmount, 0, 0 )
+	punchAng = punchAng + Angle( -(recoilAmount*self:GetVerticalKickMultiplier()), math.random(self.Primary.RecoilHorizMin, self.Primary.RecoilHorizMax) * self:GetHorizontalKickMultiplier(), 0 )
 
 	self.Owner:ViewPunch( punchAng )
+end
+
+function SWEP:GetVerticalKickMultiplier()
+	if(self:IsIronsighted()) then
+		return self.IronsightRecoil
+	end
+	
+	return 1.0
+end
+
+function SWEP:GetHorizontalKickMultiplier()
+	return 1.0
 end
 
 function SWEP:GetShootDirection()
