@@ -80,7 +80,7 @@ function SWEP:Deploy()
 	self.dt.ironsighted = false
 	self.dt.lastShootTime = 0.0
 	self.dt.shotsFired = 0
-	
+			
 	if( self.Akimbo.Enabled ) then
 
 		local vm = self.Owner:GetViewModel( 1 )
@@ -94,6 +94,9 @@ function SWEP:Deploy()
 
 	end
 	
+	local vm = self.Owner:GetViewModel( 0 )
+	vm:SetWeaponModel( self.ViewModel, self )
+
 	local deployTime = self:SendWeaponAnimation( self:GetDeployActivity(), 0, 1.0 ) -- override 4x default
 	local deployFinishes = CurTime() + deployTime
 

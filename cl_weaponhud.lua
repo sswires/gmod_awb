@@ -13,7 +13,6 @@ crosshair 				= GetConVar( "crosshair" )
 function SWEP:DrawHUD()
 	if( self.CustomHud ) then
 		self:DrawCustomCrosshair()
-		self:DrawAmmoCounter()
 	end
 end
 
@@ -61,54 +60,4 @@ function SWEP:DrawCustomCrosshair()
 	
 	self.LastCrosshairGap = gap;
 
-end
-
-function SWEP:CustomAmmoDisplay()
-	self.AmmoDisplay = self.AmmoDisplay or {} 
-	self.AmmoDisplay.Draw = false
-	
-	return self.AmmoDisplay
-end
-
-function SWEP:DrawAmmoCounter()
-    local screenScale = ( ScrH() / 720 )
-    local ammoWidth = 120 * screenScale
-    local blockHeight = 6 * screenScale
-    local blockGap = 3 * screenScale
-    
-    if( self.Primary.ClipSize > 0 ) then
-        local blockWidth = (ammoWidth / self.Primary.ClipSize) - ( blockGap / (self.Primary.ClipSize - 1) )
-        local sourcePosX = ScrW() - 20 - ammoWidth - ( blockGap * self.Primary.ClipSize )
-        local sourcePosY = ScrH() - 20 - blockHeight
-        
-        local secondaryPosY = sourcePosY - blockHeight - 7
-        
-        for i=0,self.Primary.ClipSize-1 do
-            local blockColor = Color( 0, 0, 0, 150 )
-            
-            if( i < self:Clip1() ) then
-                blockColor = Color( 255, 255, 255, 200 )
-            end
-            
-            surface.SetDrawColor( 0, 0, 0, 75 )
-            surface.DrawRect( sourcePosX + ( blockWidth * i ) + ( blockGap * i ) - 1, sourcePosY - 1, blockWidth + 2, blockHeight + 2 )
-            
-            surface.SetDrawColor( blockColor.r, blockColor.g, blockColor.b, blockColor.a )
-            surface.DrawRect( sourcePosX + ( blockWidth * i ) + ( blockGap * i ), sourcePosY, blockWidth, blockHeight )
-            
-            if( self.Akimbo.Enabled ) then
-                blockColor = Color( 0, 0, 0, 150 )
-            
-                if( i < self:Clip2() ) then
-                    blockColor = Color( 255, 255, 255, 200 )
-                end                
-        
-                surface.SetDrawColor( 0, 0, 0, 75 )
-                surface.DrawRect( sourcePosX + ( blockWidth * i ) + ( blockGap * i ) - 1, secondaryPosY - 1, blockWidth + 2, blockHeight + 2 )
-                
-                surface.SetDrawColor( blockColor.r, blockColor.g, blockColor.b, blockColor.a )
-                surface.DrawRect( sourcePosX + ( blockWidth * i ) + ( blockGap * i ), secondaryPosY, blockWidth, blockHeight )
-            end
-        end
-    end
 end
