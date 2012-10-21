@@ -1,4 +1,4 @@
-SWEP.ViewModelOffsets = {
+SWEP.ViewModelOffsets 	= {
 							Ironsight = {
 											pos = Vector( 0, 2, 0 ),
 											ang = Angle( 0, 0, 0 ),
@@ -34,15 +34,15 @@ function SWEP:SendWeaponAnimation( anim, idx, pbr )
 		local nextSequence = self:FindTransitionSequence( self:GetSequence(), idealSequence )
 		
 		vm:RemoveEffects( EF_NODRAW )
-		vm:SetPlaybackRate( pbr )
 
 		if( nextSequence > 0 ) then
 			vm:SendViewModelMatchingSequence( nextSequence )
 		else
 			vm:SendViewModelMatchingSequence( idealSequence )
 		end
-
-		return vm:SequenceDuration( vm:GetSequence() )
+		
+		vm:SetPlaybackRate( pbr )
+		return vm:SequenceDuration( vm:GetSequence() ) / pbr
 	end	
 end
 
@@ -50,8 +50,8 @@ function SWEP:GetViewModelPosition( pos, ang )
 
 	self.SwayScale = self:GetSwayScale()
 	self.BobScale = self:GetBobScale() 
-	
-	
+		
+	-- check vm offsets
 	for k, v in pairs( self.ViewModelOffsets ) do
 		if( v.fracFunc ~= nil ) then
 			local frac = v.fracFunc(self)
@@ -68,7 +68,7 @@ end
 function SWEP:GetSwayScale()
 	
 	if( self:IsIronsighted() ) then
-		return 0.01
+		return 0.2
 	end
 	
 	return 1.0
@@ -81,7 +81,7 @@ function SWEP:GetBobScale()
 	end
 	
 	if( self:IsIronsighted() ) then
-		return 0.01
+		return 0.1
 	end
 	
 	return 1.0
@@ -117,7 +117,7 @@ function SWEP:ApplyViewModelTransformations( vm )
 
 				if( mHand ) then
 					if( self.Akimbo.BoneTranslate ) then
-						mHand:Translate(Vector(-4096,-8192,8192)) // out of sight, out of mind
+						mHand:Translate(Vector(-4096,-8192,8192)) -- out of sight, out of mind
 					else
 						mHand:Scale(Vector(0,0,0))
 					end
@@ -127,6 +127,10 @@ function SWEP:ApplyViewModelTransformations( vm )
 			end
 		end
 	end
+
+end
+
+function SWEP:ViewModelDrawn(vm)
 
 end
 

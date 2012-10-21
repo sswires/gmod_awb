@@ -17,7 +17,7 @@ end
 function SWEP:GetShootPlaybackRate()
 
 	if( self:IsIronsighted() ) then
-		return 5.0
+		return 3.0
 	end
 	
 	return 1.0
