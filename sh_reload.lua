@@ -15,13 +15,13 @@ function SWEP:Reload()
 		return
 	end
 	
-	if( ( self:Clip1() < self.Primary.ClipSize or (self.OpenBolt and self:Clip1() <= self.Primary.ClipSize) ) and !self.dt.reloadPrimary ) then
+	if( CurTime() >= self:GetNextPrimaryFire() and ( self:Clip1() < self.Primary.ClipSize or (self.OpenBolt and self:Clip1() <= self.Primary.ClipSize) ) and !self.dt.reloadPrimary ) then
 		self:StartReloadAt( 0 )
 	end
 	
 	if( self.Akimbo.Enabled ) then
 	
-		if( ( self:Clip2() < self.Primary.ClipSize or (self.OpenBolt and self:Clip2() <= self.Primary.ClipSize) ) and !self.dt.reloadSecondary ) then
+		if( CurTime() >= self:GetNextSecondaryFire() and ( self:Clip2() < self.Primary.ClipSize or (self.OpenBolt and self:Clip2() <= self.Primary.ClipSize) ) and !self.dt.reloadSecondary ) then
 			self:StartReloadAt( 1 )
 		end
 	end
@@ -43,7 +43,7 @@ function SWEP:StartReloadAt( idx )
 	local reloadTimeMod = self:GetReloadTimeModifier()
 	local reloadActivity = self:GetReloadActivity( idx )
 	
-	local reloadTimeTotal = self:SendWeaponAnimation( reloadActivity, idx, reloadTimeMod ) * reloadTimeMod
+	local reloadTimeTotal = self:SendWeaponAnimation( reloadActivity, idx, reloadTimeMod )
 	
 	if( idx == 0 ) then
 		self:SetNextPrimaryFire( CurTime() + reloadTimeTotal )

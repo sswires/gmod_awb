@@ -36,8 +36,8 @@ function SWEP:DrawCustomCrosshair()
 	
 	if( self.ZoomCrosshair == false and self:IsIronsighted() and CurTime() > self.dt.ironsightTime + self.IronsightTime ) then return end
 	
-	local x = ScrW()/2
-	local y = ScrH()/2
+	local x = ScrW() * 0.5
+	local y = ScrH() * 0.5
 	
 	local gap = math.Approach( self.LastCrosshairGap, ( (self.Primary.Cone * ( 260 * (ScrH()/720) ) ) * self:GetSpreadBias()) * crosshair_scale:GetFloat(), FrameTime() * 160 )
 	gap = math.Clamp( gap, 0, (ScrH()/2)-100 )
@@ -52,10 +52,12 @@ function SWEP:DrawCustomCrosshair()
 	end
 	
 	if( alpha > 0 ) then
-		self:DrawCrosshairBit( x - gap - length + 1, y - 1, length, 3, alpha ) -- left
+		self:DrawCrosshairBit( x - gap - length, y - 1, length, 3, alpha ) -- left
 		self:DrawCrosshairBit( x + gap + 1, y - 1, length, 3, alpha ) -- right
 		self:DrawCrosshairBit( x - 1, y - gap - length + 1, 3, length, alpha ) -- top 
 		self:DrawCrosshairBit( x - 1, y + gap + 1, 3, length, alpha ) -- bottom
+		
+		self:DrawCrosshairBit( x - 1, y - 1, 3, 3, alpha )
 	end
 	
 	self.LastCrosshairGap = gap;

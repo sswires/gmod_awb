@@ -18,6 +18,7 @@ SWEP.Akimbo.BoneProfile				= "css_lefthanded"
 SWEP.Akimbo.ClearBones				= { css_lefthanded = { "v_weapon.Right_Hand", "v_weapon.R_wrist_helper", "v_weapon.Right_Arm", "v_weapon.Right_Thumb01","v_weapon.Right_Thumb02", "v_weapon.Right_Thumb03", "v_weapon.Right_Middle01", "v_weapon.Right_Middle02", "v_weapon.Right_Middle03", "v_weapon.Right_Ring01", "v_weapon.Right_Ring02", "v_weapon.Right_Ring03", "v_weapon.Right_Pinky01", "v_weapon.Right_Pinky02", "v_weapon.Right_Pinky03", "v_weapon.Right_Index01", "v_weapon.Right_Index02", "v_weapon.Right_Index03", "v_weapon.eff18", "v_weapon.Root23", "v_weapon.eff9", "v_weapon.Root24", "v_weapon.Root26", "v_weapon.Root27", "v_weapon.Root28", "v_weapon.Root98", "v_weapon.Root25", "v_weapon.Root36" }, hl2 = { "ValveBiped.Bip01_L_Hand" } }
 SWEP.Akimbo.BoneTranslate			= true
 
+SWEP.Primary.TracerFrequency		= 5
 SWEP.Primary.Damage					= 25
 SWEP.Primary.Delay					= 0.2
 SWEP.Primary.Recoil 				= 0.05
@@ -25,6 +26,8 @@ SWEP.Primary.Bullets				= 1
 SWEP.Primary.Cone					= 0.0
 SWEP.Primary.Sound					= Sound("Weapon_Pistol.Single")
 SWEP.Primary.EmptySound				= Sound("Weapon_Pistol.Empty")
+SWEP.Primary.Burst					= 0
+SWEP.Primary.BurstDelay				= 0.4
 
 SWEP.HasIronsights					= false
 SWEP.IronsightFOV					= 65
@@ -65,6 +68,7 @@ function SWEP:SetupDataTables()
 	self:DTVar( "Float", 3, "lastShootTime" )
 	
 	self:DTVar( "Int", 0, "shotsFired" )
+	self:DTVar( "Int", 1, "burstQueue" )
 	
 	self:DTVar( "Bool", 0, "reloadPrimary" )
 	self:DTVar( "Bool", 1, "reloadSecondary" )
@@ -81,6 +85,7 @@ function SWEP:Deploy()
 	self.dt.ironsighted = false
 	self.dt.lastShootTime = 0.0
 	self.dt.shotsFired = 0
+	self.dt.burstQueue = 0
 			
 	if( self.Akimbo.Enabled ) then
 
@@ -122,9 +127,30 @@ end
 
 function SWEP:OnEmpty(idx)
 	self:EmitSound( self.Primary.EmptySound )
+	
+	self.dt.burstQueue = 0
+	
+	if( idx == 0 ) then
+		self:SetNextPrimaryFire( CurTime() + 0.5 )
+	else
+		self:SetNextSecondaryFire( CurTime() + 0.5 )
+	end
+	
+	if( self.Primary.Automatic ~= true and self.Owner:GetAmmoCount( self.Primary.Ammo ) > 0 ) then
+		timer.Simple( 0.2, function() self:StartReloadAt(idx) end )
+	end
 end
 
 function SWEP:PrimaryAttack()
+
+	if( self.dt.burstQueue <= 0 ) then
+		self.dt.burstQueue = self.Primary.Burst
+		self:FirePrimary()
+	end
+
+end
+
+function SWEP:FirePrimary()
 
 	self:SetNextPrimaryFire( CurTime() + self.Primary.Delay )
 	
@@ -148,41 +174,51 @@ function SWEP:PrimaryAttack()
 	
 	-- effects
 	self:DoShootEffects( 0 )
+	
 end
 
 function SWEP:SecondaryAttack()
 	
 	if( self.Akimbo.Enabled ) then
 
-		self:SetNextSecondaryFire( CurTime() + self.Primary.Delay )
-		
-		if( self.dt.reloadSecondary or self:Clip2() <= 0 or !self:CanAttack() ) then
-			if(self:Clip2() <= 0) then
-				self:OnEmpty(1)
-			end
-			
-			return
+		if( self.dt.burstQueue <= 0 ) then
+			self:FireSecondary()
 		end
-
-		self:TakeSecondaryAmmo( 1 )
-	
-		local idleTime = self:SendWeaponAnimation( self:GetPrimaryAttackActivity(), 1, self:GetShootPlaybackRate() )
-		self.dt.nextIdleTime = CurTime() + idleTime
-
-		self:EmitSound( self.Primary.Sound )
 		
-		self:ShootBullets( self.Primary.Damage, self.Primary.Bullets, self.Primary.Cone, 1 )
-		self:AddViewKick()
-	
-		-- effects
-		self:DoShootEffects( 1 )
 	else
 		
-		if( self.HasIronsights and self:CanAttack() ) then
+		if( self.HasIronsights and self:CanAttack() and ( self.dt.reloadPrimary == false or CurTime() + self.IronsightTime >= self:GetReloadTimerForIndex(0) ) ) then
 			self:SetIronsights( !self.dt.ironsighted )
 		end
 	end
 	
+end
+
+function SWEP:FireSecondary()
+	
+	self:SetNextSecondaryFire( CurTime() + self.Primary.Delay )
+	
+	if( self.dt.reloadSecondary or self:Clip2() <= 0 or !self:CanAttack() ) then
+		if(self:Clip2() <= 0) then
+			self:OnEmpty(1)
+		end
+		
+		return
+	end
+
+	self:TakeSecondaryAmmo( 1 )
+
+	local idleTime = self:SendWeaponAnimation( self:GetPrimaryAttackActivity(), 1, self:GetShootPlaybackRate() )
+	self.dt.nextIdleTime = CurTime() + idleTime
+
+	self:EmitSound( self.Primary.Sound )
+	
+	self:ShootBullets( self.Primary.Damage, self.Primary.Bullets, self.Primary.Cone, 1 )
+	self:AddViewKick()
+
+	-- effects
+	self:DoShootEffects( 1 )
+		
 end
 
 function SWEP:SetIronsights( b )
@@ -305,8 +341,36 @@ function SWEP:LowerThink()
 	
 end
 
+function SWEP:BurstThink()
+	local burst = self.dt.burstQueue
+	
+	if( self:CanAttack() == false ) then
+		self.dt.burstQueue = 0
+	else
+		self.dt.burstQueue = self.dt.burstQueue - 1
+			
+		self:FirePrimary()
+		
+		if( self.Akimbo.Enabled ) then
+			self:SecondaryAttack()
+		end
+
+		if( self.dt.burstQueue <= 0 ) then
+			self:SetNextPrimaryFire( CurTime() + self.Primary.BurstDelay )
+			
+			if( self.Akimbo.Enabled ) then
+				self:SetNextSecondaryFire( self:GetNextPrimaryFire() )
+			end
+		end
+	end
+end
+
 function SWEP:Think()
 
+	if( self.Primary.Burst > 0 and self.dt.burstQueue > 0 and CurTime() >= self:GetNextPrimaryFire() ) then
+		self:BurstThink()
+	end
+	
 	if( self.dt.reloadPrimary ) then
 		self:ReloadThink( 0 )
 	end
@@ -316,8 +380,12 @@ function SWEP:Think()
 	end
 	
 	-- remove spray penalty for next burst
-	if( !self.Owner:KeyDown( IN_ATTACK ) ) then
+	if( !self.Owner:KeyDown( IN_ATTACK ) and self.dt.burstQueue <= 0 ) then
 		self.dt.shotsFired = 0
+	end
+	
+	if( self:Clip1() <= 0 and self.Primary.Automatic == true and !self.Owner:KeyDown( IN_ATTACK ) ) then
+		self:Reload()
 	end
 	
 	self:LowerThink()

@@ -17,6 +17,19 @@ SWEP.ViewModelOffsets 	= {
 													return weap:GetSprintFraction()
 												end,
 										},
+							Ladder = 	{
+											pos = Vector( 0, 0, -10 ),
+											ang = Angle( 0, 0, 0 ),
+											
+											fracFunc =
+												function(weap)
+													if( weap.Owner:GetMoveType() == MOVETYPE_LADDER ) then
+														return 1.0
+													end
+													
+													return 0.0
+												end
+										}
 						}
 
 function SWEP:SendWeaponAnimation( anim, idx, pbr )

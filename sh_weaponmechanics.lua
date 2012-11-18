@@ -68,6 +68,8 @@ end
 
 function SWEP:ShootBullets( damage, bullets, spread, vmidx )
 
+	self.Owner:LagCompensation(true)
+	
 	local vm = self.Owner:GetViewModel( vmidx or 0 )
 	spread = spread * self:GetSpreadBias()
 	
@@ -76,19 +78,20 @@ function SWEP:ShootBullets( damage, bullets, spread, vmidx )
 	bullet.Src 		= self.Owner:GetShootPos()	
 	bullet.Dir 		= self:GetShootDirection()			
 	bullet.Spread 	= Vector( spread, spread, 0 )		
-	bullet.Tracer	= 0
+	bullet.Tracer	= self.Primary.TracerFrequency
 	bullet.Force	= math.Round(damage * 2)							
 	bullet.Damage	= math.Round(damage)
 	bullet.AmmoType = "Pistol"
-	bullet.TracerName 	= "Tracer"
 	bullet.Callback = function ( attacker, tr, dmginfo )
-		self.Weapon:BulletCallback( attacker, tr, dmginfo, 0 )
+		return self.Weapon:BulletCallback( attacker, tr, dmginfo, 0 )
 	end
 	
 	self.Owner:FireBullets( bullet )
 	
 	self.dt.lastShootTime = CurTime()
 	self.dt.shotsFired = self.dt.shotsFired + 1
+	
+	self.Owner:LagCompensation(false)
 		
 end
 
@@ -98,7 +101,7 @@ function SWEP:BulletCallback( attacker, tr, dmginfo, bounce )
 	
 	self.Weapon:BulletPenetration( attacker, tr, dmginfo, bounce + 1 );
 	
-	return { damage = true, effect = true, effects = true };
+	return { damage = true, effects = true };
 	
 end
 
@@ -164,15 +167,20 @@ function SWEP:BulletPenetration( attacker, tr, dmginfo, bounce )
 		
 		bullet.Callback = function( a, b, c ) if ( self.BulletCallback ) then return self:BulletCallback( a, b, c, bounce + 1 ) end end
 		
-		local effectdata = EffectData()
-		effectdata:SetOrigin( PeneTrace.HitPos );
-		effectdata:SetNormal( PeneTrace.Normal );
-		util.Effect( "Impact", effectdata ) 
+		if(tr.MatType ~= MAT_TYPE_GLASS) then
+			local effectdata = EffectData()
+			effectdata:SetEntity(tr.Entity)
+			effectdata:SetOrigin(PeneTrace.HitPos)
+			effectdata:SetStart(tr.HitPos + PeneDir)
+			effectdata:SetScale(1)
+			effectdata:SetNormal(PeneDir * -1)
+			effectdata:SetDamageType(DMG_BULLET)
+			effectdata:SetHitBox(tr.HitBox)
+			effectdata:SetSurfaceProp(2)
+			
+			util.Effect("Impact", effectdata) 
+		end
 		
-		timer.Simple( 0.05,
-			function()
-				attacker:FireBullets(bullet, true)
-			end
-		)
+		attacker:FireBullets(bullet, true)
 	end
 end
